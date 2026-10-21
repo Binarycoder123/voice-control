@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>PathoTrace - Hospital Safety Console</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: Arial, sans-serif;
+}
+
+body {
+  display: flex;
+  background: linear-gradient(135deg, #0b1c2d, #091426);
+  color: white;
+  height: 100vh;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 250px;
+  background: #0e1f33;
+  padding: 20px;
+}
+
+.sidebar h2 {
+  margin-bottom: 20px;
+}
+
+.nav-btn {
+  display: block;
+  padding: 12px;
+  margin-bottom: 10px;
+  background: #1c2e45;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.nav-btn:hover {
+  background: #2c4c74;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  padding: 30px;
+  overflow-y: auto;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  border: none;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.primary-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.mic-btn {
+  background: #1c2e45;
+  color: white;
+  border: 1px solid #3b82f6;
+}
+
+/* Sections */
+.section {
+  display: none;
+}
+
+.section.active {
+  display: block;
+}
+
+.card {
+  background: #1c2e45;
+  padding: 20px;
+  border-radius: 12px;
+  margin-bottom: 20px;
+}
+
+input {
+  padding: 10px;
+  margin-bottom: 10px;
+  width: 100%;
+  border-radius: 6px;
+  border: none;
+}
+</style>
+</head>
+
+<body>
+
+<!-- Sidebar -->
+<div class="sidebar">
+  <h2>PathoTrace</h2>
+
+  <div class="nav-btn" onclick="showSection('dashboard')">Dashboard</div>
+  <div class="nav-btn" onclick="showSection('addPatient')">Add Patient</div>
+  <div class="nav-btn" onclick="showSection('addStaff')">Add Staff</div>
+  <div class="nav-btn" onclick="showSection('qrScan')">QR Visit Scan</div>
+  <div class="nav-btn" onclick="showSection('riskMonitor')">High Risk Monitor</div>
+</div>
+
+<!-- Main -->
+<div class="main">
+
+  <div class="header">
+    <h1>Hospital Operations Dashboard</h1>
+    <div>
+      <button class="primary-btn">Refresh Data</button>
+      <button class="mic-btn" onclick="toggleVoice()">🎙 Voice Control</button>
+      <span id="voiceStatus">Voice stopped</span>
+    </div>
+  </div>
+
+  <!-- Dashboard -->
+  <div id="dashboard" class="section active">
+    <div class="card">
+      <h3>Dashboard KPIs</h3>
+      <p>Total Patients: 505</p>
+      <p>Total Staff: 503</p>
+      <p>High Risk Patients: 207</p>
+    </div>
+  </div>
+
+  <!-- Add Patient -->
+  <div id="addPatient" class="section">
+    <div class="card">
+      <h3>Add Patient</h3>
+      <input placeholder="Patient ID">
+      <input placeholder="Name">
+      <input placeholder="Age">
+      <button class="primary-btn">Create Patient</button>
+    </div>
+  </div>
+
+  <!-- Add Staff -->
+  <div id="addStaff" class="section">
+    <div class="card">
+      <h3>Add Staff</h3>
+      <input placeholder="Name">
+      <input placeholder="Role">
+      <button class="primary-btn">Create Staff</button>
+    </div>
+  </div>
+
+  <!-- QR Scan -->
+  <div id="qrScan" class="section">
+    <div class="card">
+      <h3>QR Visit Entry / Exit</h3>
+      <p>Scanner Area</p>
+      <button class="primary-btn" onclick="startScanner()">Start Scanner</button>
+      <button onclick="stopScanner()">Stop Scanner</button>
+    </div>
+  </div>
+
+  <!-- Risk Monitor -->
+  <div id="riskMonitor" class="section">
+    <div class="card">
+      <h3>High Risk Monitor</h3>
+      <p>Patient_145 - High</p>
+      <p>Staff_202 - High</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+/* SECTION NAVIGATION */
+function showSection(sectionId) {
+  document.querySelectorAll('.section').forEach(sec => {
+    sec.classList.remove('active');
+  });
+  document.getElementById(sectionId).classList.add('active');
+}
+
+/* FAKE SCANNER FUNCTIONS */
+function startScanner() {
+  alert("Scanner Started");
+}
+
+function stopScanner() {
+  alert("Scanner Stopped");
+}
+
+/* VOICE CONTROL */
+let recognition;
+let isListening = false;
+
+function toggleVoice() {
+  if (!('webkitSpeechRecognition' in window)) {
+    alert("Speech Recognition not supported in this browser");
+    return;
+  }
+
+  if (!recognition) {
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = false;
+    recognition.lang = "en-US";
+
+    recognition.onresult = function(event) {
+      const transcript = event.results[event.results.length - 1][0].transcript
+        .toLowerCase()
+        .trim();
+
+      console.log("Voice Command:", transcript);
+      handleVoiceCommand(transcript);
+    };
+
+    recognition.onend = function() {
+      if (isListening) recognition.start();
+    };
+  }
+
+  if (!isListening) {
+    recognition.start();
+    isListening = true;
+    document.getElementById("voiceStatus").innerText = "Listening...";
+  } else {
+    recognition.stop();
+    isListening = false;
+    document.getElementById("voiceStatus").innerText = "Voice stopped";
+  }
+}
+
+function handleVoiceCommand(command) {
+
+  if (command.includes("dashboard")) {
+    showSection("dashboard");
+  }
+
+  else if (command.includes("add patient")) {
+    showSection("addPatient");
+  }
+
+  else if (command.includes("add staff")) {
+    showSection("addStaff");
+  }
+
+  else if (command.includes("qr")) {
+    showSection("qrScan");
+  }
+
+  else if (command.includes("high risk")) {
+    showSection("riskMonitor");
+  }
+
+  else if (command.includes("start scanner")) {
+    startScanner();
+  }
+
+  else if (command.includes("stop scanner")) {
+    stopScanner();
+  }
+}
+</script>
+
+</body>
+</html>
